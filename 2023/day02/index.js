@@ -5,12 +5,18 @@ const gamesData = input
   .split("\n")
   .map((line) => line.split(": "))
   .map((line) => {
-    let [game, subsetsRaw] = line;
-    game = Number(game.replace("Game ", ""));
+    const [game, subsetsRaw] = line;
+    const gameId = Number(game.replace("Game ", ""));
+    const subsets = subsetsRaw
+      .split("; ")
+      .join(", ")
+      .split(", ")
+      .map((cube) => {
+        const [count, type] = cube.split(" ");
+        return [Number(count), type];
+      });
 
-    const subsets = subsetsRaw.split("; ").map((subset) => subset.split(", "));
-
-    return [game, subsets];
+    return { gameId, subsets };
   });
 
 // PART ONE
@@ -23,44 +29,30 @@ const partOne = () => {
   };
 
   return gamesData
-    .map(([gameId, subsets]) => {
-      const isGamePossible = subsets.map((subset) => {
-        const areSubGamesPossible = subset.map((cubes) => {
-          const [amount, type] = cubes.split(" ");
-
-          return Number(amount) <= bag[type];
-        });
-
-        return !areSubGamesPossible.includes(false);
-      });
-
-      return isGamePossible.includes(false) ? null : gameId;
-    })
-    .reduce((prev, curr) => curr + prev, 0);
+    .filter(({ subsets }) =>
+      subsets.every(([count, type]) => count <= bag[type])
+    )
+    .reduce((total, { gameId }) => gameId + total, 0);
 };
 
 // PART TWO
 
 const partTwo = () => {
   return gamesData
-    .map(([, subsets]) => {
+    .map(({ subsets }) => {
       const bag = {
         red: 0,
         green: 0,
         blue: 0,
       };
 
-      subsets.forEach((subset) => {
-        subset.forEach((cubes) => {
-          const [amount, type] = cubes.split(" ");
-
-          if (Number(amount) > bag[type]) {
-            bag[type] = Number(amount);
-          }
-        });
+      subsets.forEach(([count, type]) => {
+        if (count > bag[type]) {
+          bag[type] = count;
+        }
       });
 
       return bag.red * bag.blue * bag.green;
     })
-    .reduce((prev, curr) => curr + prev, 0);
+    .reduce((total, curr) => curr + total, 0);
 };
